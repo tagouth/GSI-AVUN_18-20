@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="author" content="Samuel Szoniecky">    
+        <title>Notes des étudiants GSI AVUN 18-19</title>
+
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+        <script type="text/javascript" src="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.js"></script>
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="http://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css" />
+        <style>
+            .ifForm {
+                width:800px;
+                height:600px;
+            }
+        </style>
+    </head>    
+<body>
+    <div id="resultats"></div>
+    <br />
+
+    <script>
+        var dtForm, dtEtu;
+        function popup() {
+            w2popup.open({
+                width: 500,
+                height: 300,
+                title: 'Récupération des données',
+                body: '<div class="w2ui-centered"></div>',
+                buttons: '',
+                showMax: false
+            });
+        }
+    
+
+        popup();
+        w2popup.lock('Merci de patienter', true);
+
+        //la liste des formulaires
+        var urlListeFormulaire = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-Xv3xGDYC1DF15KKf9VpguVox9RCHTcMYPA4CuiUg0UbpeWl06Wy1BZY59lzveYdYfDF3QVa4kL1R/pub?gid=525034576&single=true&output=csv';
+        //la liste des étudiants
+        var urlListeEtu = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT-Xv3xGDYC1DF15KKf9VpguVox9RCHTcMYPA4CuiUg0UbpeWl06Wy1BZY59lzveYdYfDF3QVa4kL1R/pub?gid=645297817&single=true&output=csv';
+        d3.csv(urlListeFormulaire).then(function (data) {
+            dtForm = data;
+            d3.csv(urlListeEtu).then(function (data) {
+                dtEtu = data;
+                //affichage du formulaire
+                var r = d3.select("#resultats")
+                    .selectAll(".form")
+                    .data(dtForm)
+                    .enter().append("div")
+                        .attr('class','form');
+                r.append('div')
+                    .attr('class','etu')
+                    .html(function(d, i) {
+                        var etu = dtEtu.filter(function(e){return e['E-mail']==d['votre mail']});
+                            
+                            if(etu.length == 0)
+                                d.etu = {'Nom':'inconnu','Prénom':'inconnu'};
+                            else
+                                d.etu = etu[0];
+
+                            var html = '<h1>'+d.etu['Nom']+' '+d.etu['Prénom']+'</h1>';
+                            html += '<h2>'+d['votre mail']+'</h2>';
+                            html += '<iframe class="ifForm" id="ifForm'+i+'" title="Formulaire" ';
+                            html += ' src="'+d['le lien vers le formulaire']+' ">';
+                            html += ' </iframe>';
+                            return html;
+                           //return d['votre mail']+' '++' '+d['le lien vers les réponses']; 
+                        });
+                //affichage des réponses
+                r.append("div")
+                    .attr('class','reponse')
+                    .attr('id',function(d, i) {return 'reponse'+i})
+                    .call(afficheReponse);
+               
+                w2popup.unlock();         
+                w2popup.close();         
+
+            });
+
+
+        });
+
+    function afficheResultats(d, i){
+        //affiche les résultats
+        d3.csv(d['le lien vers les réponses']).then(function (data) {
+            d.data = data;
+            var iterator = d.data.keys(), html="";   
+            for (let key of iterator) {
+                html += key+','; 
+            }
+            html += '<br/>'; 
+            d.data.forEach(function(v){
+                for (let key of iterator) {
+                    html += v[k]+',';
+                }
+                html += '<br/>'; 
+            });
+            var r = d3.select("#reponse"+i)
+            .html(html);
+        });
+
+    }
+    </script>
+</body>
+
+</html>
